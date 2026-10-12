@@ -1,0 +1,3 @@
+$ python -m cms_transport.fetch --check   (2026-10-12T22:49:28Z)
+fresh pull 875 rows; snapshot 875 rows; identical: True
+exit=0

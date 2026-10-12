@@ -38,9 +38,9 @@ def _finish(fig, path: str | Path | None):
 
 
 def solo_vs_shared(solo_lines: int, shared_lines: int, trip_solo_share: float, path=None):
-    """Finding 1: the split counted as patient visits and as van trips."""
+    """Finding 1: the split counted as patient visits and as stops (trips to one location)."""
     visit_solo = solo_lines / (solo_lines + shared_lines)
-    rows = [("Van trips (derived)", trip_solo_share), ("Patient visits", visit_solo)]
+    rows = [("Stops (derived)", trip_solo_share), ("Patient visits", visit_solo)]
     fig, ax = plt.subplots(figsize=(8, 2.8))
     for i, (label, s) in enumerate(rows):
         ax.barh(i, s, color=SOLO_C, height=0.55)
@@ -55,7 +55,7 @@ def solo_vs_shared(solo_lines: int, shared_lines: int, trip_solo_share: float, p
     ax.set_xticks([])
     ax.spines["bottom"].set_visible(False)
     ax.set_title(
-        "Most portable x-ray transport is a van sent to one patient",
+        "Most portable x-ray stops serve a single patient",
         loc="left",
         fontsize=12,
         color=INK,

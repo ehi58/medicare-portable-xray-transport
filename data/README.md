@@ -6,7 +6,7 @@ Physician & Other Practitioners: by Provider and Service*, calendar year 2024
 HCPCS R0070, R0075 and Q0092.
 
 The file was first pulled on 2026-09-15 and re-pulled on 2026-10-12. The two
-pulls are identical. `python -m cms_transport.fetch --check` repeats that
+pulls are identical (`repull-check-2026-10-12.txt`). `python -m cms_transport.fetch --check` repeats that
 comparison against the live API.
 
 | column | source column | meaning |

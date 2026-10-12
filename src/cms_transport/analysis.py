@@ -121,6 +121,9 @@ def solo_share(df: pd.DataFrame) -> dict:
     pairs = biller_pairs(df)
     both = pairs.dropna(subset=["solo_lines", "shared_lines"])
     per_pair = both.solo_lines / (both.solo_lines + both.shared_lines)
+    # Per biller, every setting together, a biller with no R0075 row counted
+    # as 100% solo. That is the population a "median biller" refers to.
+    b = per_biller_codes(df)
     return {
         "solo_lines": t70,
         "shared_lines": t75,
@@ -132,7 +135,34 @@ def solo_share(df: pd.DataFrame) -> dict:
         "pair_solo_share_median": float(np.quantile(per_pair, 0.5)),
         "pair_solo_share_q1": float(np.quantile(per_pair, 0.25)),
         "pair_solo_share_q3": float(np.quantile(per_pair, 0.75)),
+        "billers": len(b),
+        "billers_no_shared_line": int((b.shared_lines == 0).sum()),
+        "biller_solo_share_median": float(np.quantile(b.solo_share, 0.5)),
+        "biller_solo_share_q1": float(np.quantile(b.solo_share, 0.25)),
     }
+
+
+def per_biller_codes(df: pd.DataFrame) -> pd.DataFrame:
+    """Solo and shared lines per biller, every setting together; a missing code is 0."""
+    t = df[df.hcpcs.isin(TRANSPORT)]
+    w = t.pivot_table(index="biller", columns="hcpcs", values="services", aggfunc="sum", fill_value=0)
+    w = w.reindex(columns=list(TRANSPORT), fill_value=0).rename(columns={SOLO: "solo_lines", SHARED: "shared_lines"})
+    w["lines"] = w.solo_lines + w.shared_lines
+    w["solo_share"] = w.solo_lines / w.lines
+    return w.sort_values("lines", ascending=False).reset_index()
+
+
+def solo_share_by_size(df: pd.DataFrame) -> pd.DataFrame:
+    """Pooled solo share of each biller decile, billers ranked by transport lines."""
+    b = per_biller_codes(df)
+    size = int(np.ceil(len(b) / 10))
+    rows = []
+    for d in range(10):
+        s = b.iloc[d * size : (d + 1) * size]
+        if s.empty:
+            continue
+        rows.append({"decile": d + 1, "billers": len(s), "solo_share": s.solo_lines.sum() / s.lines.sum()})
+    return pd.DataFrame(rows)
 
 
 def biller_pairs(df: pd.DataFrame) -> pd.DataFrame:
@@ -167,6 +197,14 @@ def implied_stop_size(solo_allowed: float, shared_allowed: float) -> float:
     line is allowed F / n_i, so its average is (1/T)·Σ F/n_i. The n lines of a
     stop each contribute 1/n, so Σ 1/n_i = S and the average is F·S/T. Hence
     F / average = T/S, the mean number of patients per shared stop.
+
+    It is exact under three conditions: every stop has six patients or fewer
+    (larger stops price as six, so the estimate is then a floor); both codes
+    are priced on the same fee basis; and every patient behind a divisor is in
+    this file. If the divisor counts patients of every payer, a Medicare line
+    at a stop of n contributes 1/n while only the Medicare patients appear, and
+    the ratio becomes the Medicare-line-weighted harmonic mean of the TOTAL
+    stop size rather than the mean number of Medicare patients per stop.
     """
     return solo_allowed / shared_allowed
 
@@ -215,7 +253,11 @@ def stop_sizes(df: pd.DataFrame) -> dict:
 
 
 def solo_share_of_trips(df: pd.DataFrame, patients_per_shared_stop: float) -> float:
-    """Visits are not trips: a shared stop is one trip for several visits."""
+    """Visits are not trips: a shared stop is one trip to a location for several visits.
+
+    "Trip" is the code descriptors' unit: R0070 and R0075 are billed per trip
+    to a facility or location. One van run can chain several such trips.
+    """
     t70, t75 = lines(df, SOLO), lines(df, SHARED)
     return t70 / (t70 + t75 / patients_per_shared_stop)
 
