@@ -117,6 +117,12 @@ figures/                                  the three charts
 tests/test_analysis.py                    synthetic and regression tests
 ```
 
+## Licence
+
+The code is MIT-licensed (see [`LICENSE`](LICENSE)). The data in `data/` is a
+U.S. Government work published by the Centers for Medicare & Medicaid
+Services and is not covered by that licence.
+
 ## About
 
 Ehi Eromosele, data analyst and radiologic technology student.
