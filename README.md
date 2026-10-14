@@ -116,3 +116,8 @@ data/repull-check-2026-10-12.txt          the live re-pull comparison
 figures/                                  the three charts
 tests/test_analysis.py                    synthetic and regression tests
 ```
+
+## About
+
+Ehi Eromosele, data analyst and radiologic technology student.
+[LinkedIn](https://www.linkedin.com/in/ehieromosele)
