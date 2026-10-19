@@ -78,3 +78,30 @@ def test_headline_figures(df):
     assert c["lines"] == s["solo_lines"] + s["shared_lines"]
     assert c["deciles"].share_of_lines.sum() == pytest.approx(1.0)
     assert c["deciles"].billers.sum() == 287
+
+
+def bin_counts(values, edges):
+    return np.histogram(values, bins=edges)[0]
+
+
+def test_sparse_bins_merge_into_their_neighbours():
+    edges = [x / 10 for x in range(18, 62, 2)]
+    values = [2.05] * 5 + [3.3, 3.5, 4.1, 5.5, 5.7]
+    merged = A.merge_sparse_bins(values, edges)
+    counts = bin_counts(values, merged)
+    assert merged[0] == edges[0] and merged[-1] == edges[-1]
+    assert all(b > a for a, b in zip(merged, merged[1:]))
+    assert counts.sum() == len(values)
+    assert not ((counts > 0) & (counts < 3)).any(), counts
+
+
+def test_figure_two_has_no_bin_below_three_pairs(df):
+    used = A.stop_sizes(df)["used"]
+    merged = A.merge_sparse_bins(used.implied, [x / 10 for x in range(18, 62, 2)])
+    counts = bin_counts(used.implied, merged)
+    assert counts.sum() == len(used)
+    assert not ((counts > 0) & (counts < 3)).any(), counts
+
+
+def test_deciles_do_not_report_the_largest_biller(df):
+    assert "lines_high" not in A.concentration(df)["deciles"].columns

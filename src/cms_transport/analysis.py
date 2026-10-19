@@ -252,6 +252,29 @@ def stop_sizes(df: pd.DataFrame) -> dict:
     }
 
 
+def merge_sparse_bins(values, edges: list[float], min_count: int = 3) -> list[float]:
+    """Histogram edges with no bin holding between 1 and ``min_count - 1`` values.
+
+    Walks the fixed edges left to right and closes a bin only once it holds at
+    least ``min_count`` values, so a sparse bin is merged into its neighbours.
+    A sparse remainder at the right end joins the last closed bin. A bin of a
+    handful of pairs would let a reader pick out one biller's value.
+    """
+    counts, _ = np.histogram(values, bins=edges)
+    out, run = [edges[0]], 0
+    for i, n in enumerate(counts):
+        run += int(n)
+        if run >= min_count:
+            out.append(edges[i + 1])
+            run = 0
+    if out[-1] != edges[-1]:
+        if run == 0 or len(out) == 1:
+            out.append(edges[-1])
+        else:
+            out[-1] = edges[-1]
+    return out
+
+
 def solo_share_of_trips(df: pd.DataFrame, patients_per_shared_stop: float) -> float:
     """Visits are not trips: a shared stop is one trip to a location for several visits.
 
@@ -298,8 +321,10 @@ def concentration(df: pd.DataFrame) -> dict:
                 "billers": len(s),
                 "share_of_lines": s.lines.sum() / tl,
                 "share_of_dollars": s.dollars.sum() / td,
+                # The smallest biller's lines bound the decile from below. The
+                # largest is not reported: in the first decile it is the single
+                # largest biller's count.
                 "lines_low": int(s.lines.min()),
-                "lines_high": int(s.lines.max()),
             }
         )
     small = b[b.lines < 1000]

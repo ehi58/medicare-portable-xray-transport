@@ -7,6 +7,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from cms_transport.analysis import merge_sparse_bins
+
 INK = "#1f2933"
 MUTED = "#7b8794"
 SOLO_C = "#2a6f97"
@@ -66,7 +68,9 @@ def solo_vs_shared(solo_lines: int, shared_lines: int, trip_solo_share: float, p
 def stop_size_distribution(used: pd.DataFrame, median: float, weighted: float, path=None):
     """Finding 2: implied patients per shared stop across biller-setting pairs."""
     fig, ax = plt.subplots(figsize=(8, 3.6))
-    bins = [x / 10 for x in range(18, 62, 2)]
+    # 0.2-wide bins, except that a bin holding one or two pairs is merged into
+    # its neighbours, so every bar is at least three biller-setting pairs.
+    bins = merge_sparse_bins(used.implied, [x / 10 for x in range(18, 62, 2)])
     ax.hist(used.implied, bins=bins, color=SOLO_C, edgecolor="white")
     ax.axvline(median, color=INK, linestyle="--", linewidth=1, label=f"median biller-setting pair: {median:.2f}")
     ax.axvline(weighted, color=ACCENT, linestyle="-", linewidth=1.2, label=f"weighted by shared-stop visits: {weighted:.2f}")

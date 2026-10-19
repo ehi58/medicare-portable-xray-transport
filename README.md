@@ -82,6 +82,8 @@ From those two codes:
 ![Implied patients per shared stop](figures/2-stop-size.png)
 ![Share of transport visits by biller decile](figures/3-concentration.png)
 
+Small cells: figure 2 merges any bin of one or two biller-setting pairs into its neighbours, so every bar holds at least three. The outputs also drop `lines_high`, because in the top decile it is the largest biller's count.
+
 **Limitations.** These travel with every finding and are spelled out in the
 notebook:
 
